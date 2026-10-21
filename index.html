@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TATKAL-X // Generic Finite-Inventory Reservation Testbed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#0a0d0a;--panel:#12160f;--panel2:#0d1109;--line:#232b1e;--line2:#33402a;
+ --ink:#d8e0d0;--ink-dim:#7c8874;--amber:#ffb000;--amber-dim:#7a5900;--green:#00d26a;--red:#ff3b30;--blue:#4fc3f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:12px/1.35 'IBM Plex Mono',Consolas,"SFMono-Regular",monospace}
+body{overflow-x:hidden;background-image:radial-gradient(circle at 15% 10%,rgba(255,176,0,.05),transparent 40%),radial-gradient(circle at 85% 90%,rgba(0,210,106,.05),transparent 40%);background-attachment:fixed}
+button,input,select{font:inherit}
+.header{height:58px;padding:0 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:#080b07;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:7px;height:27px;background:var(--amber);box-shadow:0 0 16px #ffb00055}.title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:.8px;color:var(--amber)}.subtitle{font-size:8px;color:var(--ink-dim);letter-spacing:1.5px;margin-top:2px;text-transform:uppercase}
+.status{font-size:9px;letter-spacing:1.3px;font-weight:700;padding:7px 10px;border:1px solid var(--line2);background:#080b06}.status.safe{color:var(--green);border-color:#155c42}.status.warn{color:var(--amber);border-color:#674d17}.status.danger{color:var(--red);border-color:#6b2732;animation:blink .9s infinite}
+@keyframes blink{50%{opacity:.35}}
+.layout{display:grid;grid-template-columns:245px minmax(620px,1fr) 270px;gap:8px;padding:8px;max-width:1800px;margin:auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;min-width:0}.panelHead{height:35px;padding:11px 12px 8px;color:var(--ink-dim);font-family:'Space Grotesk',sans-serif;font-size:8px;letter-spacing:1.7px;text-transform:uppercase;border-bottom:1px dashed var(--line);font-weight:700}
+.panelBody{padding:10px}.route{border:1px solid var(--line2);background:var(--panel2);border-radius:2px;padding:9px;margin-bottom:10px}.routeTop{display:flex;justify-content:space-between;color:var(--ink-dim);font-size:8px}.routeMain{font-size:13px;color:var(--ink);font-weight:700;margin:6px 0}.routeMain span{color:var(--blue);padding:0 5px}.routeMeta{display:flex;gap:5px;flex-wrap:wrap}.tag{border:1px solid var(--line2);border-radius:2px;padding:3px 5px;color:var(--ink-dim);font-size:8px}
+.section{color:var(--ink-dim);font-size:8px;letter-spacing:1.5px;margin:11px 0 7px;font-weight:700;text-transform:uppercase}.field{margin-bottom:7px}.field label{display:block;color:#a9b89e;font-size:8px;margin-bottom:3px}input,select{width:100%;height:27px;background:#080a07;color:var(--amber);border:1px solid var(--line);border-radius:2px;padding:5px 7px;outline:none}input:focus,select:focus{border-color:var(--amber-dim)}
+.mix{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mix .field{margin:0}.mix label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toggleRow{margin:10px 0;border:1px solid #1b5942;background:#07120e;border-radius:2px;padding:9px;display:flex;align-items:center;justify-content:space-between}.toggleText b{font-size:9px;color:var(--green);letter-spacing:.4px}.toggleText span{display:block;font-size:7px;color:var(--ink-dim);margin-top:3px}.switch{position:relative;width:42px;height:22px}.switch input{display:none}.slider{position:absolute;inset:0;border:1px solid #3b4d3a;border-radius:20px;background:#151b12}.slider:before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:#71818a;transition:.16s}.switch input:checked+.slider{background:#073b27;border-color:var(--green)}.switch input:checked+.slider:before{transform:translateX(20px);background:var(--green)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:5px}.btn{height:29px;border:1px solid var(--amber);background:var(--amber);color:#141a10;cursor:pointer;font-weight:700;font-size:8px;letter-spacing:.6px;border-radius:2px}.btn.alt{border-color:var(--line2);background:transparent;color:var(--ink-dim)}.btn.full{grid-column:1/-1}.btn:disabled{opacity:.35;cursor:not-allowed}
+.note{font-size:8px;color:var(--ink-dim);line-height:1.5;border-left:2px solid var(--blue);padding-left:7px;margin-top:10px}
+.kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:9px;border-bottom:1px solid var(--line)}.kpi{min-height:57px;background:#080a07;border:1px solid var(--line);border-radius:2px;padding:8px}.kpi b{display:block;font-family:'Space Grotesk',sans-serif;font-size:17px;line-height:1;color:var(--amber);margin-bottom:5px}.kpi span{display:block;color:var(--ink-dim);font-size:7px;letter-spacing:.4px;line-height:1.35}.kpi.good b{color:var(--green)}.kpi.warn b{color:var(--amber)}.kpi.bad b{color:var(--red)}
+.subHead{padding:10px 10px 7px;color:var(--ink-dim);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;border-top:1px dashed var(--line)}
+.chartWrap{padding:0 9px 9px}.chart{width:100%;height:210px;display:block;border:1px solid var(--line);border-radius:2px;background:#080a07}.legend{display:flex;gap:13px;flex-wrap:wrap;padding:7px 1px 0;color:var(--ink-dim);font-size:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:-1px}.lC{background:var(--blue)}.lR{background:var(--red)}.lG{background:var(--green)}
+.envelope{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 9px 9px}.mini{border:1px solid var(--line);background:#080a07;border-radius:2px;padding:7px}.mini b{display:block;font-family:'Space Grotesk',sans-serif;color:var(--blue);font-size:14px}.mini span{color:var(--ink-dim);font-size:7px}
+.mapHeader{display:flex;align-items:end;justify-content:space-between;padding:10px 9px 7px}.mapTitle{font-size:9px;font-weight:700;letter-spacing:1px}.mapSub{font-size:7px;color:var(--ink-dim);margin-top:2px}.legendSeats{display:flex;gap:8px;font-size:7px;color:var(--ink-dim)}.legendSeats span{display:flex;align-items:center;gap:4px}.seatDot{width:8px;height:8px;border-radius:2px;border:1px solid var(--line2);display:inline-block}.availableDot{background:#12160f}.processingDot{background:var(--amber-dim);border-color:var(--amber)}.bookedDot{background:#0a4a2c;border-color:var(--green)}
+.coach{margin:0 9px 10px;border:1px solid var(--line2);background:#0d1109;border-radius:2px;padding:8px}.coachTop{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:8px}.coachLabel{font-size:7px;color:var(--ink-dim);letter-spacing:1px}.coachName{text-align:center;color:#c3cfb8;font-size:8px;font-weight:700}.coachEnd{text-align:right;color:var(--ink-dim);font-size:7px}
+.seatRows{display:flex;flex-wrap:wrap;gap:3px;position:relative}
+.seat{width:14px;height:14px;border-radius:2px;border:1px solid #1d241a;background:#0e120c;cursor:default;padding:0;flex:0 0 auto;transition:background .15s}
+.seat.processing{background:var(--amber-dim);border-color:var(--amber);animation:pulse .6s infinite alternate}
+@keyframes pulse{from{opacity:1}to{opacity:.55}}
+.seat.booked{background:#0a4a2c;border-color:var(--green)}
+.seat.empty{visibility:hidden}
+.seatTip{position:fixed;z-index:50;pointer-events:none;background:#080a07;border:1px solid var(--line2);border-radius:2px;padding:7px 9px;font-size:8px;line-height:1.6;color:var(--ink);box-shadow:0 4px 18px #000a;white-space:nowrap;display:none}
+.seatTip b{color:var(--blue);letter-spacing:.4px}.seatTip .tipRow{display:flex;justify-content:space-between;gap:14px}.seatTip .tipRow span:first-child{color:var(--ink-dim)}
+.seatTip.booked b{color:var(--green)}.seatTip.processing b{color:var(--amber)}
+.bookingFoot{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;border-top:1px solid var(--line);color:var(--ink-dim);font-size:7px}.bookingFoot strong{color:var(--ink)}
+.metricGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:9px}.metric{border:1px solid var(--line);background:#080a07;border-radius:2px;padding:8px;min-height:61px}.metric b{display:block;font-family:'Space Grotesk',sans-serif;color:var(--amber);font-size:17px;line-height:1;margin-bottom:5px}.metric span{display:block;color:var(--ink-dim);font-size:7px;line-height:1.35}.metric.good b{color:var(--green)}.metric.warn b{color:var(--amber)}.metric.bad b{color:var(--red)}
+.researchBox{margin:0 9px 9px;border:1px solid var(--line2);background:#080a07;border-radius:2px;padding:9px}.researchBox .rtitle{color:var(--blue);font-size:8px;letter-spacing:1.1px;font-weight:700;margin-bottom:6px}.researchBox .value{font-family:'Space Grotesk',sans-serif;font-size:20px;color:var(--blue);font-weight:700}.researchBox .desc{font-size:7px;color:var(--ink-dim);line-height:1.45;margin-top:5px}.events{max-height:285px;overflow:auto;border-top:1px solid var(--line)}.event{padding:6px 9px;border-bottom:1px solid #171c12;font-size:7px;color:#a7b39c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event b{color:var(--blue)}
+.footerNote{padding:8px 9px;color:#5c6653;font-size:7px;border-top:1px solid var(--line);line-height:1.5}
+@media(max-width:1250px){.layout{grid-template-columns:220px minmax(500px,1fr) 245px}.kpiGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.kpiGrid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:650px){.kpiGrid{grid-template-columns:repeat(2,1fr)}.seat{height:34px}.seatRow{grid-template-columns:repeat(3,1fr) 10px repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="brand"><div class="mark"></div><div><div class="title">TATKAL-X // SAFE BURST ABSORPTION TESTBED</div><div class="subtitle">Generic finite-inventory reservation simulation · synchronized demand · closed-loop admission control · reproducible research (not tied to any specific real-world booking system)</div></div></div>
+  <div id="status" class="status warn">READY</div>
+</header>
+
+<div class="layout">
+<section class="panel">
+  <div class="panelHead">RESERVATION SCENARIO</div>
+  <div class="panelBody">
+    <div class="route">
+      <div class="routeTop"><span id="serviceView">GENERIC RESERVATION SERVICE</span><span>RESERVATION RUN</span></div>
+      <div class="routeMain"><span id="originView">SOURCE NODE</span> → <span id="destinationView">SINK NODE</span></div>
+      <div class="routeMeta"><span class="tag" id="classView">STANDARD TIER</span><span class="tag" id="quotaView">OPEN</span><span class="tag">SYNCHRONIZED BURST</span></div>
+    </div>
+
+    <div class="section">CORE WORKLOAD</div>
+    <div class="field"><label>SYNCHRONIZED REQUESTS</label><input id="burst_size" type="number" value="8000" min="1"></div>
+    <div class="field"><label>FINITE INVENTORY / TICKETS</label><input id="inventory_cfg" type="number" value="1000" min="1"></div>
+    <div class="field"><label>BACKEND CAPACITY / SEC</label><input id="service_capacity_per_s" type="number" value="50" step="1" min="1"></div>
+    <div class="field"><label>LATENCY BOUND / SEC</label><input id="latency_limit_s" type="number" value="4" step="0.1" min="0.1"></div>
+    <div class="field"><label>MPC PREDICTION HORIZON / STEPS</label><input id="horizon" type="number" value="6" min="1" max="30" title="Prediction steps only. This does not terminate the reservation run."></div>
+    <div class="field"><label>RETRY PROBABILITY</label><input id="retry_probability" type="number" value="0.10" step="0.01" min="0" max="1"></div>
+
+    <div class="section">CLIENT MIX</div>
+    <div class="mix">
+      <div class="field"><label>FAST</label><input id="fast_user_share" type="number" value="0.20" step="0.01"></div>
+      <div class="field"><label>NORMAL</label><input id="normal_user_share" type="number" value="0.45" step="0.01"></div>
+      <div class="field"><label>SLOW</label><input id="slow_user_share" type="number" value="0.20" step="0.01"></div>
+      <div class="field"><label>MOBILE</label><input id="mobile_user_share" type="number" value="0.10" step="0.01"></div>
+      <div class="field"><label>RETRY-PRONE</label><input id="retry_prone_user_share" type="number" value="0.05" step="0.01"></div>
+      <div class="field"><label>SEED</label><input id="seed" type="number" value="42"></div>
+    </div>
+
+    <div class="section">CONTROLLER</div>
+    <div class="toggleRow"><div class="toggleText"><b id="modeLabel">PROPOSED · MPC + CBF</b><span id="modeSub">dynamic safe-absorption envelope</span></div><label class="switch"><input id="controller" type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="actions">
+      <button class="btn full" id="startBtn">START RESERVATION RUN</button>
+      <button class="btn alt" id="stopBtn">STOP</button>
+      <button class="btn alt" id="resetBtn">RESET</button>
+      <button class="btn full" id="exportBtn">EXPORT LIVE CSV</button>
+    </div>
+    <div class="note">ON and OFF use the same seeded workload, finite inventory, service profile and retry model. Only the controller changes.</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panelHead">LIVE RESERVATION STATE</div>
+  <div class="kpiGrid">
+    <div class="kpi" id="attemptsKpi"><b id="attempts">0</b><span>REQUEST ATTEMPTS</span></div>
+    <div class="kpi"><b id="activated">0</b><span>ACTIVATED TRANSACTIONS</span></div>
+    <div class="kpi good"><b id="timely">0</b><span>SUCCESSFUL BOOKINGS</span></div>
+    <div class="kpi"><b id="completed">0</b><span>TOTAL SUCCESSFUL BOOKINGS</span></div>
+    <div class="kpi"><b id="pending">0</b><span>PENDING DEMAND</span></div>
+    <div class="kpi" id="inventoryKpi">
+      <b id="inventory">0</b><span>TICKETS REMAINING (LIVE)</span>
+    </div>
+    <div class="kpi"><b id="active">0</b><span>ACTIVE TRANSACTIONS</span></div>
+  </div>
+
+  <div class="subHead">SYSTEM TELEMETRY (LIVE, MEASURED) · reported only — not part of the safe-envelope definition unless enabled</div>
+  <div class="kpiGrid">
+    <div class="kpi"><b id="arrivalRate">0</b><span>ARRIVAL RATE / SEC</span></div>
+    <div class="kpi"><b id="admissionRate">0</b><span>ADMISSION RATE / SEC</span></div>
+    <div class="kpi"><b id="cpuPct">0%</b><span>PROCESS CPU %</span></div>
+    <div class="kpi"><b id="rssMb">0</b><span>PROCESS MEMORY / MB</span></div>
+  </div>
+
+  <div class="subHead">WORKLOAD / SAFETY / COMPLETION</div>
+  <div class="chartWrap">
+    <canvas id="chart" class="chart"></canvas>
+    <div class="legend"><span><i class="lC"></i>ACTIVE TRANSACTIONS</span><span><i class="lR"></i>SAFE CONCURRENCY</span><span><i class="lG"></i>SUCCESSFUL BOOKINGS</span></div>
+  </div>
+
+  <div class="subHead">PROPOSED CONTROL STATE</div>
+  <div class="envelope">
+    <div class="mini" id="safeAbsBox"><b id="safeAbs">N/A</b><span>DYNAMIC SAFE ABSORPTION ESTIMATE · RESERVATIONS (B_safe, planning quantity)</span></div>
+    <div class="mini"><b id="safeC">0</b><span>SAFE CONCURRENCY</span></div>
+  </div>
+
+  <div class="mapHeader">
+    <div><div class="mapTitle">INVENTORY BLOCK · LIVE RESERVATION MAP</div><div class="mapSub">Blocks correspond to finite inventory slots; booking status is transaction-driven.</div></div>
+    <div class="legendSeats"><span><i class="seatDot availableDot"></i>AVAILABLE</span><span><i class="seatDot processingDot"></i>PROCESSING</span><span><i class="seatDot bookedDot"></i>BOOKED</span></div>
+  </div>
+  <div class="coach">
+    <div class="coachTop"><div class="coachLabel">ENTRY</div><div class="coachName">BLOCK B1 · INVENTORY MAP</div><div class="coachEnd">EXIT</div></div>
+    <div id="seatRows" class="seatRows"></div>
+    <div id="seatTip" class="seatTip"></div>
+  </div>
+  <div class="bookingFoot"><span>Displayed inventory: <strong id="seatCount">0</strong></span><span>Booked: <strong id="bookedCount">0</strong></span><span>Processing: <strong id="processingCount">0</strong></span></div>
+</section>
+
+<section class="panel">
+  <div class="panelHead">BENCHMARK METRICS</div>
+  <div class="metricGrid">
+    <div class="metric good"><b id="absorb">0%</b><span>BURST ABSORPTION RATE (BAR) = SUCCESSES / INITIAL BURST</span></div>
+    <div class="metric"><b id="throughput">0</b><span>GOODPUT / SEC (NATURAL RUN)</span></div>
+    <div class="metric"><b id="timelyRate">0%</b><span>BOOKING SUCCESS RATE</span></div>
+    <div class="metric"><b id="p95">0</b><span>P95 END-TO-END LATENCY / SEC</span></div>
+    <div class="metric"><b id="p99">0</b><span>P99 END-TO-END LATENCY / SEC</span></div>
+    <div class="metric"><b id="viol">0</b><span>SAFETY VIOLATIONS</span></div>
+    <div class="metric"><b id="maxViol">0</b><span>MAX SAFE-ENVELOPE EXCESS</span></div>
+    <div class="metric"><b id="retryAmp">0%</b><span>RETRY AMPLIFICATION</span></div>
+    <div class="metric"><b id="peak">0</b><span>PEAK ACTIVE TRANSACTIONS</span></div>
+    <div class="metric"><b id="ctrlMs">0</b><span>CONTROLLER COMPUTE / CALL MS</span></div>
+  </div>
+
+
+  <div class="subHead">LIVE TRANSACTION LOG</div>
+  <div id="events" class="events"></div>
+  <div class="footerNote">Synthetic workload · deterministic seeds · finite non-replenishable inventory · actual transaction commit required before a ticket becomes BOOKED. The run continues until inventory naturally sells out or all generated demand/retries are resolved. No artificial booking deadline is used. Inventory is never forced to zero; residual inventory is valid when demand is exhausted first.</div>
+</section>
+</div>
+
+<script>
+let es=null,historyData=[];
+const $=id=>document.getElementById(id);
+const ids=['service_name','origin','destination','travel_class','quota','population','burst_size','inventory_cfg','service_capacity_per_s','latency_limit_s','horizon','hawkes_alpha','hawkes_beta','payment_success','retry_probability','fast_user_share','normal_user_share','slow_user_share','mobile_user_share','retry_prone_user_share','seed'];
+function payload(){
+  const o={
+    service_name:'GENERIC RESERVATION SERVICE',origin:'SOURCE NODE',destination:'SINK NODE',travel_class:'STANDARD TIER',quota:'OPEN',
+    population:10000,hawkes_alpha:0.08,hawkes_beta:0.80,horizon:6,payment_success:0.985,
+  };
+  for(const id of ids){
+    const e=$(id); if(!e) continue;
+    const v=e.value;
+    if(['service_name','origin','destination','travel_class','quota'].includes(id)) o[id]=v;
+    else if(id==='retry_probability') o[id]=+v;
+    else if(id==='burst_size') o[id]=+v;
+    else if(id==='inventory_cfg') o.inventory=+v;
+    else if(id==='service_capacity_per_s'||id==='latency_limit_s'||id==='horizon'||id==='hawkes_alpha'||id==='hawkes_beta'||id.includes('share')||id==='seed') o[id]=+v;
+  }
+  o.controller_mode=$('controller').checked?'mpc_cbf':'fixed_rate';
+  return o;
+}
+function setModeText(){
+  const on=$('controller').checked;
+  $('modeLabel').textContent=on?'PROPOSED · MPC + CBF':'BASELINE · FIXED-RATE';
+  $('modeLabel').style.color=on?'var(--green)':'var(--amber)';
+  $('modeSub').textContent=on?'dynamic safe-absorption envelope':'conventional non-predictive admission';
+}
+function syncRoute(){
+  $('serviceView').textContent='GENERIC RESERVATION SERVICE';$('originView').textContent='SOURCE NODE';$('destinationView').textContent='SINK NODE';$('classView').textContent='STANDARD TIER';$('quotaView').textContent='OPEN';
+}
+async function configure(){
+  const r=await fetch('/api/configure',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});
+  const d=await r.json();if(!d.ok)throw new Error(d.error||'configuration failed');
+}
+async function start(){
+  try{$('startBtn').disabled=true;await configure();await fetch('/api/start',{method:'POST'});$('controller').disabled=true;connect();}
+  catch(e){$('status').textContent='ERROR: '+e.message;$('status').className='status danger';$('startBtn').disabled=false;}
+}
+async function stop(){await fetch('/api/stop',{method:'POST'});$('controller').disabled=false;$('startBtn').disabled=false;}
+async function resetRun(){await fetch('/api/reset',{method:'POST'});$('controller').disabled=false;$('startBtn').disabled=false;connect();}
+function connect(){if(es)es.close();es=new EventSource('/api/stream');es.onmessage=e=>render(JSON.parse(e.data));}
+$('controller').addEventListener('change',setModeText);$('startBtn').onclick=start;$('stopBtn').onclick=stop;$('resetBtn').onclick=resetRun;$('exportBtn').onclick=()=>location='/api/export';
+setModeText();syncRoute();connect();
+function fmt(x,n=2){return Number(x||0).toFixed(n)}
+function render(s){
+  $('status').textContent=s.running?'BOOKING WINDOW LIVE':(s.error?'ENGINE ERROR':'WINDOW READY / COMPLETE');
+  $('status').className='status '+(s.error?'danger':s.running?'safe':'warn');
+  $('attempts').textContent=s.attempts;$('activated').textContent=s.activated;$('timely').textContent=s.successful_bookings;$('completed').textContent=s.completed;
+  $('pending').textContent=s.pending;$('inventory').textContent=s.inventory;$('active').textContent=s.active;
+  $('inventoryKpi').title=`Finite non-replenishable inventory. Successful commits decrement it by exactly one; current value is never artificially forced to zero.`;
+  $('attemptsKpi').title=`Includes ${s.retry_events} retry attempt(s) so far. Retries are normal user behavior after a failed payment, not a fault signal by themselves; per-user retry counts are also shown on hover over each booked/processing block below.`;
+  $('arrivalRate').textContent=fmt(s.arrival_rate,1);$('admissionRate').textContent=fmt(s.admission_rate,1);
+  $('cpuPct').textContent=fmt(s.cpu,1)+'%';$('rssMb').textContent=fmt(s.rss_mb,1);
+  $('p95').textContent=fmt(s.p95_latency,2);$('p99').textContent=fmt(s.p99_latency,2);$('viol').textContent=s.safety_violations;$('maxViol').textContent=s.max_safe_violation;
+  $('throughput').textContent=fmt(s.goodput_per_s,1);$('absorb').textContent=(100*s.burst_absorption_rate).toFixed(2)+'%';$('timelyRate').textContent=(100*s.timely_success_rate).toFixed(1)+'%';
+  $('retryAmp').textContent=(100*s.retry_amplification).toFixed(2)+'%';$('peak').textContent=s.peak_active;$('ctrlMs').textContent=fmt(s.controller_compute_ms_mean,3);
+  const on=s.algorithm_enabled;
+  if(on&&s.safe_absorption_current!==null){
+    $('safeAbs').textContent=Math.round(s.safe_absorption_current);
+    $('safeAbsBox').title='Predicted safe absorption over the current MPC horizon. This is a planning quantity, not a full-run performance ratio.';
+  }
+  else{$('safeAbs').textContent='N/A';$('safeAbsBox').title='Controller is OFF (baseline mode) — no proposed safe-absorption estimate applies.';}
+  renderSeats(s.seat_view||[]);renderEvents(s.events||[]);historyData=s.history||[];draw();
+}
+let seatIndex={};
+function renderSeats(seats){
+  seatIndex={};
+  const html=seats.map(seat=>{
+    seatIndex[seat.slot]=seat;
+    const cls=seat.status==='BOOKED'?'booked':seat.status==='PROCESSING'?'processing':'';
+    return `<div class="seat ${cls}" data-slot="${seat.slot}"></div>`;
+  }).join('');
+  $('seatRows').innerHTML=html;
+  $('seatCount').textContent=seats.length;$('bookedCount').textContent=seats.filter(x=>x.status==='BOOKED').length;$('processingCount').textContent=seats.filter(x=>x.status==='PROCESSING').length;
+}
+function seatTipHtml(seat){
+  if(seat.status==='AVAILABLE'){
+    return `<div class="tipRow"><b>${seat.label}</b></div><div class="tipRow"><span>Status</span><span>Available</span></div>`;
+  }
+  const statusText=seat.status==='BOOKED'?'Booked':'Processing';
+  let rows=`<div class="tipRow"><b>${seat.label}</b><span>${statusText}</span></div>`;
+  rows+=`<div class="tipRow"><span>User</span><span>#${String(seat.user_id).padStart(4,'0')}</span></div>`;
+  rows+=`<div class="tipRow"><span>Connection</span><span>${seat.network_label||'—'}</span></div>`;
+  rows+=`<div class="tipRow"><span>Retries</span><span>${seat.retries??0}</span></div>`;
+  if(seat.network_rtt_s!=null)rows+=`<div class="tipRow"><span>Network RTT</span><span>${fmt(seat.network_rtt_s,3)}s</span></div>`;
+  if(seat.latency_s!=null)rows+=`<div class="tipRow"><span>${seat.status==='BOOKED'?'End-to-end latency':'Elapsed'}</span><span>${fmt(seat.latency_s,2)}s</span></div>`;
+  return rows;
+}
+(function initSeatTooltip(){
+  const rows=$('seatRows'),tip=$('seatTip');
+  rows.addEventListener('mouseover',e=>{
+    const el=e.target.closest('.seat');if(!el)return;
+    const seat=seatIndex[el.dataset.slot];if(!seat)return;
+    tip.className='seatTip '+(seat.status==='BOOKED'?'booked':seat.status==='PROCESSING'?'processing':'');
+    tip.innerHTML=seatTipHtml(seat);tip.style.display='block';
+  });
+  rows.addEventListener('mousemove',e=>{
+    if(tip.style.display!=='block')return;
+    const pad=14;let x=e.clientX+pad,y=e.clientY+pad;
+    const tw=tip.offsetWidth,th=tip.offsetHeight;
+    if(x+tw>window.innerWidth-6)x=e.clientX-tw-pad;
+    if(y+th>window.innerHeight-6)y=e.clientY-th-pad;
+    tip.style.left=x+'px';tip.style.top=y+'px';
+  });
+  rows.addEventListener('mouseout',e=>{
+    if(!e.relatedTarget||!rows.contains(e.relatedTarget))tip.style.display='none';
+  });
+})();
+function eventText(x){
+  if(x.type==='BOOKED')return `TICKET ${String(x.id+1).padStart(4,'0')} · BOOKED`;
+  if(x.type==='USER_ACTIVATED')return `REQUEST ${String(x.id+1).padStart(4,'0')} · PROCESSING`;
+  if(x.type==='PAYMENT_FAILURE')return `REQUEST ${String(x.id+1).padStart(4,'0')} · PAYMENT FAILED / RETRY EVALUATED`;
+  if(x.type==='RETRY_WAVE')return `RETRY WAVE · ${x.n} REQUESTS RE-ENTERED`;
+  if(x.type==='SYNCHRONIZED_BURST')return `SYNCHRONIZED ARRIVAL · ${x.n} REQUESTS`;
+  if(x.type==='SIMULATION_COMPLETE')return `RUN COMPLETE · ${String(x.reason||'natural termination').replaceAll('_',' ').toUpperCase()}`;
+  return x.type;
+}
+function renderEvents(rows){$('events').innerHTML=rows.slice().reverse().slice(0,45).map(x=>`<div class="event"><b>${fmt(x.t,1)}s</b> · ${escapeHtml(eventText(x))}</div>`).join('')}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function draw(){
+  const c=$('chart'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1,w=Math.max(500,c.clientWidth),h=Math.max(180,c.clientHeight);c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  if(historyData.length<2)return;
+  const keys=['active','safe_concurrency','completed'];const max=Math.max(1,...historyData.flatMap(x=>keys.map(k=>Number(x[k]||0))));
+  ctx.strokeStyle='#1a2015';ctx.lineWidth=1;for(let i=1;i<5;i++){const y=8+i*(h-25)/5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  function line(key,color){ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();historyData.forEach((x,i)=>{const X=i/(historyData.length-1)*w;const Y=h-12-(Number(x[key]||0)/max)*(h-25);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke();}
+  line('active','#4fc3f7');line('safe_concurrency','#ff3b30');line('completed','#00d26a');
+}
+window.addEventListener('resize',()=>draw());
+</script>
+</body>
+</html>
